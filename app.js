@@ -1,33 +1,59 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const jwt = require('jsonwebtoken');
-const rout = require('./rout/api')
-const request= require('request');
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const jwt = require("jsonwebtoken");
+const rout = require("./rout/api");
+const request = require("request");
+const bcrypt = require("bcryptjs");
+require("./config/database").connect();
+
 app.use(bodyParser.json());
+
 dotenv.config();
+app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use('/', rout);
+app.use("/", rout);
 
-const connectionParams = {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useUnifiedTopology: true,
-}
+const cors = require("cors");
+app.use(
+  cors({
+    origin: "http://localhost:4200",
+  })
+);
 
-mongoose.connect(process.env.DB_CONNECT, connectionParams)
-    .then(() => {
-        console.log("connected DB");
-    }).catch((err) => console.log(err));
+app.use(function (req, res, next) {
+  // Website you wish to allow to connect
+  res.setHeader("Access-Control-Allow-Origin", "http://127.0.0.1:4200");
 
+  // Request methods you wish to allow
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+  );
 
-// const func = () => {
-//     //יוצר מחרוזת סודית 
-//     let token = jwt.sign({ name: "hodaya", password: "123456" }, process.env.SECRET);
-//     console.log("token===", token);
+  // Request headers you wish to allow
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With,content-type"
+  );
 
-// }
-// func()
-app.listen(4000, function () { console.log('listening on port 4000') })
+  // Set to true if you need the website to include cookies in the requests sent
+  // to the API (e.g. in case you use sessions)
+  // res.setHeader('Access-Control-Allow-Credentials', true);
+
+  // Pass to next layer of middleware
+  next();
+});
+
+app.listen(4000, function () {
+  console.log("listening on port 4000");
+  app.get;
+});
+
+// const auth = require("./middleware/auth");
+
+// app.post("/welcome", auth, (req, res) => {
+//   res.status(200).send("Welcome  ");
+// });

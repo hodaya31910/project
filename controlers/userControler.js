@@ -1,17 +1,56 @@
 const Product = require("../moduls/product.js");
 const User = require("../moduls/user.js");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 //createUser
 const createUser = async (req, res) => {
   console.log("create user");
   try {
+    const { firstName, lastName, email, password } = req.body;
+    if (!(email && password && firstName && lastName)) {
+      res.status(400).send("All input is required");
+    }
+    const oldUser = await User.findOne({ email });
+    if (oldUser) {
+      return res.status(409).send("User Already Exist. Please Login");
+    }
     const newUser = new User(req.body);
+    const token = jwt.sign(
+      { name: newUser._id, password: newUser.password },
+      process.env.SECRET
+    );
+    newUser.token = token;
     await newUser.save();
-    res.status(200).json({ newUser: newUser });
+    res.status(201).json(newUser);
   } catch (err) {
     res.status(500).json({ err: err.message });
   }
 };
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!(email && password)) {
+      res.status(400).send("All input is required");
+    }
+    const user = await User.findOne({ email });
+    console.log(user);
+    if (user && password === user.password) {
+      // Create token
+      const token = jwt.sign(
+        { name: user._id, password: user.password },
+        process.env.SECRET
+      );
+      user.token = token;
+      res.status(200).json(user);
+    }
+    res.status(400).send("Invalid Credentials");
+  } catch (err) {
+    res.status(500).json({ err: err.message });
+  }
+};
+
 //updateUser
 const updateUser = async (req, res) => {
   console.log("updateUser");
@@ -22,6 +61,7 @@ const updateUser = async (req, res) => {
     res.status(500).json({ err: err.message });
   }
 };
+
 //addProduct
 //צריך לבדוק אם המוצר קיים במלאי
 const addProduct = async (req, res) => {
@@ -35,9 +75,9 @@ const addProduct = async (req, res) => {
     const user = await User.findById(req.body.id);
     const findProduct = await Product.findById(product.id);
     await product.save();
-      user.products.push(product);
-      await user.save();
-     res.status(200).json({ user: user });
+    user.products.push(product);
+    await user.save();
+    res.status(200).json({ user: user });
     // if (product.amount > 0) {
     //   product.amount -= 1;
     //   await product.save();
@@ -83,6 +123,7 @@ const getShoppingCart = async (req, res) => {
   }
 };
 module.exports = {
+  login,
   createUser,
   updateUser,
   addProduct,
